@@ -1,0 +1,309 @@
+/* DocYOLO Legends CSS */
+
+:root {
+  /* Light theme variables */
+  --background-color: rgba(255, 255, 255, 0.98);
+  --border-color: rgba(230, 230, 230, 0.7);
+  --text-color: #111827;
+  --text-secondary: #374151;
+  --text-tertiary: #6b7280;
+  --icon-color: #6b7280;
+  --hover-bg: rgba(0, 0, 0, 0.03);
+  --active-bg: rgba(59, 130, 246, 0.08);
+  --search-bg: rgba(255, 255, 255, 0.8);
+  --search-border: rgba(0, 0, 0, 0.1);
+  --id-bg: rgba(99, 102, 241, 0.1);
+  --id-color: #6366f1;
+  --shadow-color: rgba(0, 0, 0, 0.08);
+  --shadow-color-hover: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="dark"] {
+  /* Dark theme variables */
+  --background-color: rgba(30, 30, 30, 0.95);
+  --border-color: rgba(60, 60, 60, 0.7);
+  --text-color: #f3f4f6;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --icon-color: #9ca3af;
+  --hover-bg: rgba(255, 255, 255, 0.05);
+  --active-bg: rgba(59, 130, 246, 0.15);
+  --search-bg: rgba(40, 40, 40, 0.8);
+  --search-border: rgba(255, 255, 255, 0.1);
+  --id-bg: rgba(165, 180, 252, 0.15);
+  --id-color: #a5b4fc;
+  --shadow-color: rgba(0, 0, 0, 0.2);
+  --shadow-color-hover: rgba(0, 0, 0, 0.3);
+}
+
+.legend-container {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--background-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px var(--shadow-color), 0 1px 3px rgba(0, 0, 0, 0.05);
+  width: 280px;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: calc(100vh - 100px);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+}
+
+.legend-container.collapsed {
+  max-height: 56px;
+  width: 250px;
+}
+
+/* Horizontal expansion styles */
+.legend-container.expanded {
+  width: 680px;
+}
+
+.legend-container:hover {
+  box-shadow: 0 8px 30px var(--shadow-color-hover), 0 1px 3px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+.legend-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.legend-title-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.legend-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-color);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.legend-search-header {
+  position: relative;
+  flex: 1;
+  max-width: 180px;
+  transition: max-width 0.3s ease;
+}
+
+.legend-container.expanded .legend-search-header {
+  max-width: 300px;
+}
+
+.legend-search-header input {
+  width: 100%;
+  padding: 4px 8px 4px 26px;
+  border-radius: 6px;
+  border: 1px solid var(--search-border);
+  font-size: 12px;
+  background-color: var(--search-bg);
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.legend-search-header input:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+.search-icon-header {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+}
+
+.legend-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--icon-color);
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background-color: var(--hover-bg);
+  color: var(--text-color);
+}
+
+.legend-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--icon-color);
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.legend-toggle:hover {
+  background-color: var(--hover-bg);
+  color: var(--text-color);
+}
+
+/* Rotate the toggle icon for horizontal expansion */
+.legend-container:not(.collapsed) .legend-toggle svg {
+  transform: rotate(-90deg);
+}
+
+.legend-container.collapsed .legend-toggle svg {
+  transform: rotate(90deg);
+}
+
+.legend-content {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  transition: max-height 0.3s ease, opacity 0.2s ease;
+}
+
+.legend-container.collapsed .legend-content {
+  max-height: 0;
+  opacity: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+/* Hide the original search section since we moved it to the header */
+.legend-search {
+  display: none;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  overflow-y: auto;
+  max-height: 160px;
+  align-content: flex-start;
+  width: 100%;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  width: calc(22% - 4px);
+  min-width: 120px;
+}
+
+.legend-item:hover {
+  background-color: var(--hover-bg);
+}
+
+.legend-item.active {
+  background-color: var(--active-bg);
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  margin-right: 8px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.legend-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.legend-name {
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.legend-id {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--id-color);
+  background-color: var(--id-bg);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .legend-container {
+    width: 240px;
+    bottom: 16px;
+    right: 16px;
+  }
+  
+  .legend-container.collapsed {
+    width: 180px;
+  }
+  
+  .legend-container.expanded {
+    width: 90vw;
+    max-width: 480px;
+  }
+  
+  .legend-item {
+    width: 100%;
+  }
+  
+  .legend-search-header {
+    max-width: 120px;
+  }
+}
+
+/* Animation for legend appearance */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.legend-container {
+  animation: slideIn 0.3s ease forwards;
+} 

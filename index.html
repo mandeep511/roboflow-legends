@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Roboflow Legends</title>
+    <link rel="stylesheet" href="css/index.css" />
+    <link rel="stylesheet" href="css/popup.css" />
+  </head>
+  <body data-theme="light" class="docyolo-theme">
+    <div class="App">
+      <section class="content">
+        <img class="logo" src="images/roboflow-logo.svg" alt="Roboflow Legends Logo" />
+        <h1>Roboflow Legends</h1>
+        <p>
+          Smart element detection and captioning powered by Roboflow machine learning.
+        </p>
+        
+        <!-- Current site info -->
+        <div class="site-info-container">
+          <div class="site-label">Current site:</div>
+          <div id="site-info" class="site-value">Loading...</div>
+        </div>
+        
+        <div class="controls">
+          <div class="control-group">
+            <label for="enabled-toggle">Enable Legends</label>
+            <label class="switch">
+              <input type="checkbox" id="enabled-toggle" checked>
+              <span class="slider round"></span>
+            </label>
+          </div>
+          
+          <div class="control-group">
+            <label for="theme-select">Theme</label>
+            <select id="theme-select">
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+              <option value="auto">Auto (match system)</option>
+            </select>
+          </div>
+
+          <!-- Preset Management -->
+          <div class="control-group">
+            <label for="preset-select">Preset</label>
+            <div class="preset-controls">
+              <select id="preset-select">
+                <option value="default">Default</option>
+                <!-- Other presets will be loaded dynamically -->
+              </select>
+              <button id="save-preset-btn" class="small-btn" title="Save current as preset">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                  <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                  <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+              </button>
+              <button id="delete-preset-btn" class="small-btn" title="Delete current preset">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="legend-preview">
+          <h2>Caption Preview</h2>
+          <div class="preview-items">
+            <!-- Preview items will be dynamically inserted here -->
+          </div>
+        </div>
+
+        <!-- Legend Editor -->
+        <div class="legend-editor">
+          <h2>Edit Legends</h2>
+          <div class="editor-controls">
+            <button id="add-legend-btn" class="action-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Add New
+            </button>
+          </div>
+          <div class="editor-items">
+            <!-- Editor items will be dynamically inserted here -->
+          </div>
+        </div>
+        
+        <div class="footer">
+          <p>
+            <a href="https://github.com/yourusername/roboflow-legends" target="_blank" rel="noreferrer">GitHub</a> | 
+            <a href="https://roboflow.com/docs" target="_blank" rel="noreferrer">Documentation</a>
+          </p>
+          <p class="note">
+            <small>Note: Legends are enabled by default only on app.roboflow.com</small>
+          </p>
+        </div>
+      </section>
+    </div>
+    
+    <!-- Save Preset Modal -->
+    <div id="save-preset-modal" class="modal">
+      <div class="modal-content">
+        <h3>Save Preset</h3>
+        <div class="modal-form">
+          <label for="preset-name">Preset Name:</label>
+          <input type="text" id="preset-name" placeholder="Enter preset name">
+        </div>
+        <div class="modal-actions">
+          <button id="cancel-save-preset" class="secondary-btn">Cancel</button>
+          <button id="confirm-save-preset" class="primary-btn">Save</button>
+        </div>
+      </div>
+    </div>
+    
+    <script src="js/popup.js"></script>
+  </body>
+</html>
