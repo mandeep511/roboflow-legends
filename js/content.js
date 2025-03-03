@@ -6,10 +6,12 @@ let isEnabled = false; // Default to disabled
 let currentTheme = 'light';
 let legendContainer = null;
 let currentLabels = null;
+let isMinimized = false; // Track minimized state
 
-// Check if we're on app.roboflow.com
+// Check if we're on a Roboflow domain
 function isRoboflowApp() {
-  return window.location.hostname === 'app.roboflow.com';
+  const hostname = window.location.hostname;
+  return hostname === 'roboflow.com' || hostname.endsWith('.roboflow.com');
 }
 
 // Create and inject the legends HTML
@@ -49,6 +51,11 @@ function injectLegendsComponent() {
               <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
             </svg>
           </button>
+          <button class="minimize-toggle" aria-label="Minimize legend">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
           <button class="legend-toggle" aria-label="Toggle legend visibility">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="9 18 15 12 9 6"></polyline>
@@ -79,18 +86,19 @@ function injectLegendsComponent() {
 
 // Load settings from storage
 function loadSettings() {
-  chrome.storage.sync.get(['enabled', 'theme', 'currentPreset', 'siteSettings'], (result) => {
+  chrome.storage.sync.get(['theme', 'currentPreset', 'siteSettings', 'isMinimized', 'allowedDomains'], (result) => {
     // Check if we have site-specific settings
     const siteSettings = result.siteSettings || {};
     const hostname = window.location.hostname;
+    const allowedDomains = result.allowedDomains || ['roboflow.com'];
     
     // Determine if enabled based on site-specific settings or global setting
     if (siteSettings[hostname] !== undefined) {
       // Use site-specific setting if available
       isEnabled = siteSettings[hostname].enabled;
     } else {
-      // Otherwise use global setting or default (enabled only for app.roboflow.com)
-      isEnabled = result.enabled !== undefined ? result.enabled : isRoboflowApp();
+      // By default, only enable on Roboflow domains or domains in the allowedDomains list
+      isEnabled = isRoboflowApp() || isDomainAllowed(hostname, allowedDomains);
       
       // Save this setting for this site
       saveSiteSetting(hostname, isEnabled);
@@ -100,9 +108,13 @@ function loadSettings() {
     currentTheme = result.theme || 'light';
     const currentPreset = result.currentPreset || 'default';
     
+    // Set minimized state
+    isMinimized = result.isMinimized || false;
+    
     // Apply settings
     toggleVisibility(isEnabled);
     applyTheme(currentTheme);
+    applyMinimizedState(isMinimized);
     
     // Load preset if not default
     if (currentPreset !== 'default' && localStorage.getItem('legendPresets')) {
@@ -112,6 +124,14 @@ function loadSettings() {
         updateLegendItems(currentLabels);
       }
     }
+  });
+}
+
+// Check if a domain is in the allowed domains list
+function isDomainAllowed(domain, allowedDomains) {
+  // Check if the domain or any parent domain is in the allowed list
+  return allowedDomains.some(allowedDomain => {
+    return domain === allowedDomain || domain.endsWith('.' + allowedDomain);
   });
 }
 
@@ -129,10 +149,53 @@ function toggleVisibility(show) {
   if (!legendContainer) return;
   
   if (show) {
-    legendContainer.style.display = 'block';
+    legendContainer.classList.remove('hidden');
   } else {
-    legendContainer.style.display = 'none';
+    legendContainer.classList.add('hidden');
   }
+}
+
+// Apply minimized state
+function applyMinimizedState(minimized) {
+  if (!legendContainer) return;
+  
+  if (minimized) {
+    legendContainer.classList.add('minimized');
+    
+    // Update minimize button to show maximize icon
+    const minimizeButton = legendContainer.querySelector('.minimize-toggle');
+    if (minimizeButton) {
+      minimizeButton.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+        </svg>
+      `;
+      minimizeButton.setAttribute('aria-label', 'Maximize legend');
+    }
+  } else {
+    legendContainer.classList.remove('minimized');
+    
+    // Update minimize button to show minimize icon
+    const minimizeButton = legendContainer.querySelector('.minimize-toggle');
+    if (minimizeButton) {
+      minimizeButton.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      `;
+      minimizeButton.setAttribute('aria-label', 'Minimize legend');
+    }
+  }
+}
+
+// Toggle minimized state
+function toggleMinimized() {
+  isMinimized = !isMinimized;
+  applyMinimizedState(isMinimized);
+  
+  // Save minimized state
+  chrome.storage.sync.set({ isMinimized });
 }
 
 // Apply theme to the legend
@@ -234,6 +297,7 @@ function setupLegendUI(labels) {
   const legendItems = document.querySelector('.legend-items');
   const legendToggle = document.querySelector('.legend-toggle');
   const themeToggle = document.querySelector('.theme-toggle');
+  const minimizeToggle = document.querySelector('.minimize-toggle');
   const legendHeader = document.querySelector('.legend-header');
   const searchInput = document.querySelector('.legend-search-header input');
   
@@ -294,9 +358,30 @@ function setupLegendUI(labels) {
       legendContainer.classList.toggle('collapsed');
     }
     
+    // Update toggle button icon
+    const isCollapsed = legendContainer.classList.contains('collapsed');
+    legendToggle.innerHTML = isCollapsed ? 
+      `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>` : 
+      `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>`;
+    
     // Save state to localStorage
     localStorage.setItem('legendCollapsed', legendContainer.classList.contains('collapsed'));
     localStorage.setItem('legendExpanded', legendContainer.classList.contains('expanded'));
+  }
+  
+  // Add event listeners
+  legendToggle.addEventListener('click', toggleLegend);
+  
+  // Add minimize toggle event listener
+  if (minimizeToggle) {
+    minimizeToggle.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent triggering the header click event
+      toggleMinimized();
+    });
   }
   
   legendHeader.addEventListener('click', (e) => {
@@ -339,63 +424,69 @@ function setupLegendUI(labels) {
     }
   });
   
-  // Draggable functionality
+  // Make the header draggable
   let isDragging = false;
-  let offsetX, offsetY;
+  let dragOffsetX = 0;
+  let dragOffsetY = 0;
   
   legendHeader.addEventListener('mousedown', (e) => {
     if (e.target.closest('.legend-toggle') || e.target.closest('.legend-search-header')) return;
     
     isDragging = true;
-    offsetX = e.clientX - legendContainer.getBoundingClientRect().left;
-    offsetY = e.clientY - legendContainer.getBoundingClientRect().top;
+    dragOffsetX = e.clientX - legendContainer.getBoundingClientRect().left;
+    dragOffsetY = e.clientY - legendContainer.getBoundingClientRect().top;
     
     legendContainer.style.transition = 'none';
-    legendContainer.style.cursor = 'grabbing';
   });
   
   document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
     
-    const x = e.clientX - offsetX;
-    const y = e.clientY - offsetY;
+    const x = e.clientX - dragOffsetX;
+    const y = e.clientY - dragOffsetY;
     
     // Keep within viewport bounds
     const maxX = window.innerWidth - legendContainer.offsetWidth;
     const maxY = window.innerHeight - legendContainer.offsetHeight;
     
-    legendContainer.style.right = 'auto';
-    legendContainer.style.bottom = 'auto';
-    legendContainer.style.left = `${Math.max(0, Math.min(x, maxX))}px`;
-    legendContainer.style.top = `${Math.max(0, Math.min(y, maxY))}px`;
+    const boundedX = Math.max(0, Math.min(x, maxX));
+    const boundedY = Math.max(0, Math.min(y, maxY));
+    
+    legendContainer.style.left = `${boundedX}px`;
+    legendContainer.style.top = `${boundedY}px`;
   });
   
   document.addEventListener('mouseup', () => {
     if (isDragging) {
       isDragging = false;
-      legendContainer.style.cursor = '';
-      legendContainer.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+      legendContainer.style.transition = '';
+      
+      // Save position
+      const rect = legendContainer.getBoundingClientRect();
+      localStorage.setItem('legendPositionX', rect.left);
+      localStorage.setItem('legendPositionY', rect.top);
     }
   });
   
-  // Restore collapsed/expanded state from localStorage
-  if (localStorage.getItem('legendCollapsed') === 'true') {
-    legendContainer.classList.add('collapsed');
-  } else if (localStorage.getItem('legendExpanded') === 'true') {
-    legendContainer.classList.add('expanded');
-  }
-  
-  // Optional: Add a reset position button
+  // Restore position from localStorage
   const resetPosition = () => {
-    legendContainer.style.left = 'auto';
-    legendContainer.style.top = 'auto';
-    legendContainer.style.right = '24px';
-    legendContainer.style.bottom = '24px';
+    const savedX = localStorage.getItem('legendPositionX');
+    const savedY = localStorage.getItem('legendPositionY');
+    
+    if (savedX !== null && savedY !== null) {
+      legendContainer.style.left = `${savedX}px`;
+      legendContainer.style.top = `${savedY}px`;
+    } else {
+      // Default position (bottom right)
+      legendContainer.style.right = '20px';
+      legendContainer.style.bottom = '20px';
+      legendContainer.style.left = 'auto';
+      legendContainer.style.top = 'auto';
+    }
   };
   
-  // Double-click header to reset position
-  legendHeader.addEventListener('dblclick', resetPosition);
-
+  resetPosition();
+  
   // Theme toggle functionality
   themeToggle.addEventListener('click', (e) => {
     e.stopPropagation(); // Prevent triggering the header click event
@@ -418,36 +509,83 @@ function setupLegendUI(labels) {
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'toggleEnabled') {
+  if (message.action === 'getStatus') {
+    // Get allowed domains to check if current domain is allowed
+    chrome.storage.sync.get(['allowedDomains'], (result) => {
+      const allowedDomains = result.allowedDomains || ['roboflow.com'];
+      const hostname = window.location.hostname;
+      
+      sendResponse({
+        enabled: isEnabled,
+        hostname: hostname,
+        isRoboflowApp: isRoboflowApp(),
+        isMinimized: isMinimized,
+        isAllowed: isDomainAllowed(hostname, allowedDomains)
+      });
+    });
+    return true; // Keep the message channel open for async response
+  } else if (message.action === 'toggleVisibility') {
     isEnabled = message.enabled;
     toggleVisibility(isEnabled);
-    
-    // Save site-specific setting
     saveSiteSetting(window.location.hostname, isEnabled);
-    
+    sendResponse({ success: true });
+  } else if (message.action === 'toggleMinimized') {
+    toggleMinimized();
     sendResponse({ success: true });
   } else if (message.action === 'setTheme') {
     currentTheme = message.theme;
     applyTheme(currentTheme);
     sendResponse({ success: true });
   } else if (message.action === 'updateLabels') {
-    updateLegendItems(message.labels);
-    sendResponse({ success: true });
-  } else if (message.action === 'getStatus') {
-    // Return current status for this site
-    sendResponse({ 
-      enabled: isEnabled,
-      hostname: window.location.hostname,
-      isRoboflowApp: isRoboflowApp()
-    });
+    if (message.labels) {
+      currentLabels = message.labels;
+      updateLegendItems(currentLabels);
+      sendResponse({ success: true });
+    } else {
+      sendResponse({ success: false, error: 'No labels provided' });
+    }
   }
-  return true;
+  return true; // Keep the message channel open for async responses
 });
 
 // Run when the DOM is fully loaded
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', injectLegendsComponent);
+  document.addEventListener('DOMContentLoaded', () => {
+    injectLegendsComponent();
+    
+    // Listen for storage changes to update settings in real-time
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+      if (namespace === 'sync') {
+        if (changes.allowedDomains) {
+          // Reload settings if allowed domains change
+          loadSettings();
+        }
+        
+        if (changes.isMinimized) {
+          // Update minimized state
+          isMinimized = changes.isMinimized.newValue;
+          applyMinimizedState(isMinimized);
+        }
+      }
+    });
+  });
 } else {
   // DOM already loaded, inject immediately
   injectLegendsComponent();
+  
+  // Listen for storage changes to update settings in real-time
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'sync') {
+      if (changes.allowedDomains) {
+        // Reload settings if allowed domains change
+        loadSettings();
+      }
+      
+      if (changes.isMinimized) {
+        // Update minimized state
+        isMinimized = changes.isMinimized.newValue;
+        applyMinimizedState(isMinimized);
+      }
+    }
+  });
 } 

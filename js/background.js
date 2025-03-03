@@ -5,16 +5,16 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('DocYOLO Legends extension installed');
   
   // Initialize default settings
-  chrome.storage.sync.get(['enabled', 'theme'], (result) => {
+  chrome.storage.sync.get(['theme', 'allowedDomains'], (result) => {
     // Only set defaults if they don't exist
     const settings = {};
     
-    if (result.enabled === undefined) {
-      settings.enabled = true;
-    }
-    
     if (result.theme === undefined) {
       settings.theme = 'light';
+    }
+    
+    if (result.allowedDomains === undefined) {
+      settings.allowedDomains = ['roboflow.com'];
     }
     
     // Save default settings if needed
@@ -45,10 +45,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true; // Keep the message channel open for async responses
 });
 
+// Function to check if a URL is a Roboflow domain
+function isRoboflowDomain(url) {
+  try {
+    const hostname = new URL(url).hostname;
+    return hostname === 'roboflow.com' || hostname.endsWith('.roboflow.com');
+  } catch (e) {
+    return false;
+  }
+}
+
 // Listen for tab updates to inject content script
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tab.url && tab.url.startsWith('http')) {
-    // You can add URL filtering here if you want to limit which sites the legends appear on
+  if (changeInfo.status === 'complete' && tab.url) {
+    // Inject on all domains, but the content script will handle enabling/disabling
     chrome.scripting.executeScript({
       target: { tabId: tabId },
       files: ['js/content.js']
